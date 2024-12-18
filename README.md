@@ -83,30 +83,41 @@ This is a Telegram Stock Information Bot built with Python and python-telegram-b
 It supports Taiwan Stock Exchange (TWSE) and U.S. Stocks.
 
 Features:
-	1.	Stock Price and K-line Charts
+1.	Stock Price and K-line Charts
+
 	•	/s <stock_code>: Retrieve the latest stock price, open, close, high, low prices, trading volume, and generate daily, weekly, and monthly K-line charts.
-	2.	U.S. Stock News
+
+2.	U.S. Stock News
+
 	•	/n <stock_code>: Retrieve the latest news for U.S. stocks.
-	3.	Taiwan Stock News
+
+3.	Taiwan Stock News
+
 	•	/ny <stock_code>: Fetch Taiwan stock news from Yahoo.
-	4.	Stock Price Prediction
+
+4.	Stock Price Prediction
+
 	•	/p <stock_code>: Predict the next 5 days’ stock price range using the Prophet model.
-	5.	Other Tools
+
+5.	Other Tools
+
 	•	/h: Display links to other stock prediction tools.
+
 
 Deployment
 
 Run with Docker
 
 To quickly start the bot, download the Docker image from Docker Hub:
-
+```
 docker pull tbdavid2019/telegram-bot-stock2:latest
-
+```
 Run the container with your Telegram Bot Token:
-
+```
 docker run -d --name telegram-bot-stock2 \
   -e TELEGRAM_BOT_TOKEN=<your_telegram_bot_token> \
   tbdavid2019/telegram-bot-stock2:latest
+```
 
 Manual Deployment
 
@@ -121,13 +132,16 @@ Steps
 pip install -r requirements.txt
 ```
 2.	Configure environment variables:
-Create a .env file and add your Telegram Bot Token.
 
+Create a .env file and add your Telegram Bot Token.
+```
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+```
 
 3.	Start the bot:
-
+```
 python main.py
+```
 
 Command List
 
@@ -144,6 +158,7 @@ Command	Description	Example Usage
 /p	Predict stock prices for 5 days	/p TSLA
 
 /h	Show links to other tools	/h
+
 
 Contribution
 
