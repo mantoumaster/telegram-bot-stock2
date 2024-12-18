@@ -9,17 +9,10 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from telegram import Update, BotCommand, KeyboardButton, ReplyKeyboardMarkup
-from telegram.ext import (
-    ApplicationBuilder, 
-    CommandHandler, 
-    ContextTypes,
-    MessageHandler, 
-    filters  # 導入這兩個模組
-)
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import time
 import logging
 from prophet import Prophet  
-import json  # 標準庫 json
 
 
 # 載入 .env 檔案中的環境變數
@@ -31,61 +24,6 @@ logging.basicConfig(
     level=logging.INFO,  # 設定日誌級別
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-# LLM API 配置
-LLM_ENDPOINT = "http://llm.glsoft.ai/v1/chat-messages"
-API_KEY = os.getenv("LLM_API_KEY")
-
-# --- 串接 LLM 功能 (/ai) ---
-async def ai_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = " ".join(context.args) if context.args else update.message.text
-    if not query:
-        await update.message.reply_text("❌ 請提供問題內容，例如：/ai AVGO 的股價前景如何？")
-        return
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "inputs": {},  # 空 inputs
-        "query": query,
-        "response_mode": "streaming",  # Streaming 模式
-        "conversation_id": "",
-        "user": str(update.effective_user.id)
-    }
-
-    try:
-        await update.message.reply_text("🤖 正在生成回應，請稍候...")
-
-        # 發送 POST 請求
-        response = requests.post(LLM_ENDPOINT, headers=headers, json=payload, stream=True)
-        response.raise_for_status()
-
-        # 處理 Streaming 回應
-        ai_response = ""
-        for line in response.iter_lines():
-            if line:
-                decoded_line = line.decode("utf-8")
-                if decoded_line.startswith("data:"):
-                    chunk = json.loads(decoded_line[5:].strip())
-                    if "answer" in chunk:
-                        ai_response += chunk["answer"]
-
-        # 發送完整 AI 回應
-        await update.message.reply_text(f"🤖 **AI 回應**：\n\n{ai_response}", parse_mode="Markdown")
-
-    except requests.exceptions.RequestException as e:
-        await update.message.reply_text(f"❌ 發送請求時發生錯誤：{str(e)}")
-    except Exception as e:
-        await update.message.reply_text(f"❌ 發生未知錯誤：{str(e)}")
-
-# --- 處理無指令的純文字訊息 ---
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message = update.message.text
-    if message.startswith("/"):  # 排除其他指令
-        return
-    await ai_query(update, context)  # 自動呼叫 LLM 功能
 
 # 設定字體
 def setup_font():
@@ -109,16 +47,15 @@ async def reset_commands(application):
     commands = [
         BotCommand("start", "啟動機器人"),
         BotCommand("s", "查詢股價和K線圖"),
+        BotCommand("p", "Prophet 預測股價 (5 天區間)"),
         BotCommand("n", "查詢美股新聞"),
         BotCommand("ny", "查詢台股新聞"),
-        BotCommand("p", "Prophet 預測股價 (5 天區間)"),
         BotCommand("h", "顯示其他股票工具連結"),
-        BotCommand("ai", "AI 問答 (基於 LLM)"),
     ]
     await application.bot.set_my_commands(commands)
     print("✅ 新指令設置成功！")
 
-
+# --- 查詢股價與 K 線圖 ---
 # --- 查詢股價與 K 線圖 ---
 async def stock_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) == 0:
@@ -362,10 +299,6 @@ async def tools_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(message, parse_mode="Markdown")
 
-
-
-
-
 # --- 主程式 ---
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -374,11 +307,9 @@ def main():
     app.add_handler(CommandHandler("s", stock_info))
     app.add_handler(CommandHandler("n", stock_news))
     app.add_handler(CommandHandler("ny", taiwan_stock_news))
-    app.add_handler(CommandHandler("p", prophet_predict))
-    app.add_handler(CommandHandler("ai", ai_query))  # 新增 /ai 指令
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))  # 無指令回應
+    app.add_handler(CommandHandler("h", tools_help))  # 新增 /h 功能
+    app.add_handler(CommandHandler("p", prophet_predict))  # 新增 /p 功能
 
-    # 設置指令
     loop = asyncio.get_event_loop()
     loop.run_until_complete(reset_commands(app))
 
