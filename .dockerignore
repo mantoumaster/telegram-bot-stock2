@@ -1,0 +1,7 @@
+__pycache__/
+myenv/
+*.pyc
+.git
+.gitignore
+.env
+*.png

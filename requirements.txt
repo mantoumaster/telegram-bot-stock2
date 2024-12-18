@@ -1,0 +1,7 @@
+python-telegram-bot
+yfinance
+matplotlib
+pandas
+requests
+python-dotenv
+prophet
