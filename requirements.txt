@@ -5,3 +5,7 @@ pandas
 requests
 python-dotenv
 prophet
+ta
+langchain-core
+langgraph
+langchain_openai
