@@ -381,24 +381,162 @@ async def stock_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) == 0:
         await update.message.reply_text("❌ 請提供股票代碼，例如：/n TSLA")
         return
-
     stock_code = context.args[0].upper()
     try:
+        print(f"=== [Debug] 正在查詢 {stock_code} 的新聞")
         stock = yf.Ticker(stock_code)
         news = stock.news
+        
+        # 詳細輸出新聞數據結構
+        print(f"=== [Debug] News data structure for {stock_code}:")
+        print(f"News type: {type(news)}, length: {len(news) if isinstance(news, list) else 'N/A'}")
+        for i, item in enumerate(news[:2] if isinstance(news, list) else []):
+            print(f"News item {i+1} type: {type(item)}")
+            print(f"News item {i+1} keys: {item.keys() if hasattr(item, 'keys') else 'No keys'}")
+            print(f"News item {i+1} full content: {item}")
+            
         if not news:
             await update.message.reply_text(f"⚠️ 找不到 {stock_code} 的新聞。")
             return
-
+        
+        # 根據新的數據結構解析
         reply_text = f"📰 **{stock_code} 美股新聞**：\n"
-        for idx, article in enumerate(news[:5]):
-            title = article.get("title", "無標題")
-            link = article.get("link", "#")
-            reply_text += f"{idx+1}. [{title}]({link})\n"
-
-        await update.message.reply_text(reply_text, parse_mode="Markdown")
+        news_count = 0
+        
+        for idx, article in enumerate(news[:10]):  # 嘗試獲取更多，最多處理10條
+            if news_count >= 5:  # 只顯示5條
+                break
+                
+            try:
+                # 檢查是否有 content 字段
+                if 'content' in article:
+                    # 嘗試解析 content 字段
+                    content = article['content']
+                    print(f"=== [Debug] News {idx+1} content type: {type(content)}")
+                    
+                    if isinstance(content, dict):
+                        # 從內容字典中提取標題
+                        title = content.get('title', "無標題")
+                        
+                        # 嘗試從各種可能的地方獲取連結
+                        link = "#"
+                        if 'clickThroughUrl' in content and isinstance(content['clickThroughUrl'], dict) and 'url' in content['clickThroughUrl']:
+                            link = content['clickThroughUrl']['url']
+                        elif 'canonicalUrl' in content and isinstance(content['canonicalUrl'], dict) and 'url' in content['canonicalUrl']:
+                            link = content['canonicalUrl']['url']
+                        elif 'url' in content:
+                            link = content['url']
+                        elif 'link' in content:
+                            link = content['link']
+                        
+                        # 添加到回覆中
+                        reply_text += f"{news_count+1}. [{title}]({link})\n"
+                        news_count += 1
+                    elif isinstance(content, str):
+                        # 如果是字符串，嘗試解析為 JSON
+                        try:
+                            content_json = json.loads(content)
+                            title = content_json.get('title', "無標題")
+                            link = content_json.get('url', "#")
+                            reply_text += f"{news_count+1}. [{title}]({link})\n"
+                            news_count += 1
+                        except json.JSONDecodeError:
+                            print(f"=== [Debug] 無法解析 content 字符串為 JSON")
+                            continue
+                
+            except Exception as article_error:
+                print(f"=== [Debug] 解析新聞項目 {idx+1} 時出錯: {str(article_error)}")
+                continue
+                
+        # 如果沒有成功解析任何新聞，嘗試使用備用方法
+        if news_count == 0:
+            # 直接使用網頁爬取作為備用方案
+            print(f"=== [Debug] 使用備用方案抓取新聞...")
+            try:
+                url = f"https://finance.yahoo.com/quote/{stock_code}/news"
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                response = requests.get(url, headers=headers)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # 找出新聞標題和連結
+                news_items = []
+                # 尋找包含新聞的元素
+                for article in soup.select('div.Ov\(h\)'):
+                    title_elem = article.select_one('a')
+                    if title_elem and title_elem.text:
+                        title = title_elem.text.strip()
+                        link = title_elem.get('href', '')
+                        if link.startswith('/'):
+                            link = f"https://finance.yahoo.com{link}"
+                        if title and link:
+                            news_items.append((title, link))
+                
+                if not news_items:  # 如果找不到特定結構，使用更通用的搜索
+                    for link in soup.find_all('a', href=True):
+                        if '/news/' in link.get('href', '') and link.text:
+                            title = link.text.strip()
+                            href = link['href']
+                            full_url = f"https://finance.yahoo.com{href}" if href.startswith('/') else href
+                            if title and len(title) > 15:  # 過濾可能不是標題的短文本
+                                news_items.append((title, full_url))
+                
+                # 移除重複的新聞項目
+                news_items = list(set(news_items))
+                
+                # 添加到回覆中
+                for i, (title, link) in enumerate(news_items[:5]):
+                    reply_text += f"{news_count+1}. [{title}]({link})\n"
+                    news_count += 1
+            
+            except Exception as scrape_error:
+                print(f"=== [Error] 備用爬蟲失敗: {str(scrape_error)}")
+                traceback.print_exc()
+        
+        # 如果依然沒有新聞，嘗試第三種方法 - Google 財經新聞搜索
+        if news_count == 0:
+            print(f"=== [Debug] 嘗試使用 Google 財經新聞搜索...")
+            try:
+                google_url = f"https://www.google.com/search?q={stock_code}+stock+news&tbm=nws"
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+                response = requests.get(google_url, headers=headers)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Google 搜索結果通常在 div.g 或類似結構中
+                news_items = []
+                for result in soup.select('div.SoaBEf'):
+                    title_elem = result.select_one('div.mCBkyc')
+                    link_elem = result.select_one('a')
+                    
+                    if title_elem and link_elem:
+                        title = title_elem.text.strip()
+                        link = link_elem.get('href', '')
+                        # Google 的連結通常包含重定向，需要提取實際 URL
+                        if 'url=' in link:
+                            link = link.split('url=')[1].split('&')[0]
+                        if title and link:
+                            news_items.append((title, link))
+                
+                # 添加到回覆中
+                for i, (title, link) in enumerate(news_items[:5]):
+                    reply_text += f"{news_count+1}. [{title}]({link})\n"
+                    news_count += 1
+            
+            except Exception as google_error:
+                print(f"=== [Error] Google 新聞搜索失敗: {str(google_error)}")
+        
+        # 最終結果
+        if news_count > 0:
+            await update.message.reply_text(reply_text, parse_mode="Markdown")
+        else:
+            await update.message.reply_text(f"⚠️ 無法獲取 {stock_code} 的相關新聞。可能原因：\n1. 股票代碼不正確\n2. 近期沒有相關新聞\n3. 資料源暫時無法訪問")
+            
     except Exception as e:
-        await update.message.reply_text(f"❌ 查詢新聞時發生錯誤：{str(e)}")
+        error_msg = f"❌ 查詢新聞時發生錯誤：{str(e)}"
+        print(f"=== [Error] {error_msg}")
+        traceback.print_exc()
+        await update.message.reply_text(error_msg)
+
+
 
 # --- 查詢 Yahoo 台股新聞 ---
 async def taiwan_stock_news(update: Update, context: ContextTypes.DEFAULT_TYPE):
