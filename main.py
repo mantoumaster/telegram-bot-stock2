@@ -38,6 +38,11 @@ from langchain_core.tools import tool
 # 載入 .env
 load_dotenv()
 
+
+# DIFY LLM API 配置 
+LLM_ENDPOINT = "http://llm.glsoft.ai/v1/chat-messages"
+API_KEY = os.getenv("LLM_API_KEY")  # 確保在 .env 文件中添加 DIFY LLM_API_KEY
+
 # 基本面分析 Prompt（繁體中文）
 FUNDAMENTAL_ANALYST_PROMPT = """
 # 📢 **{company} 投資分析報告**
@@ -57,13 +62,13 @@ FUNDAMENTAL_ANALYST_PROMPT = """
 
 💰 **市場評估**
 - **股票代號**: {ticker}
-- **總市值**: {market_cap} (USD/TWD/HKD)
+- **總市值**: {market_cap} USD/TWD (請注意，Billion 在中文是十億 1,000,000,000)
 - **所屬產業**: {industry}
 
 🥇 **競爭對手比較**
 - 主要競爭對手包括 **(競爭對手 A, 競爭對手 B)**
 
-## **📈 1️⃣ 技術分析 (Technical Analysis)**
+## **📈 一 技術分析 (Technical Analysis)**
 📊 **近期股價走勢**
 - 分析 {company} 在過去 3 個月內的價格趨勢，判斷是否有 **上升、下降或橫盤整理** 的走勢。  
 - 確認重要的 **支撐/壓力位**，判斷市場動能變化。  
@@ -78,7 +83,7 @@ FUNDAMENTAL_ANALYST_PROMPT = """
 
 ---
 
-## **💰 2️⃣ 財務分析 (Fundamental Analysis)**
+## **💰 二 財務分析 (Fundamental Analysis)**
 📊 **公司財務健康狀況**
 - **營收表現**:
   - 總營收: {數據}
@@ -102,35 +107,29 @@ FUNDAMENTAL_ANALYST_PROMPT = """
 🔹 **財務總結**：該公司當前的財務狀況 **(穩定/成長中/財務壓力大)**，投資人應該 **(關注獲利能力/審慎評估負債狀況/考慮市場估值是否合理)**。
 
 ---
-
-## **📰 3️⃣ 最新新聞與市場情緒**
+## **📰 三 最新新聞與市場情緒**
 📢 **近期重大新聞**
-1️⃣ **[新聞標題 1]** - 來源: {新聞來源}  
+   **[新聞標題 1]** - 來源: {新聞來源}  
    - 🕵 **摘要**: {新聞簡要內容}  
    - 🔍 **影響分析**: 這可能對 {company} 的 **(股價/市場情緒/財報預期)** 產生 **(正面/負面/中性) 影響**。  
-
-2️⃣ **[新聞標題 2]** - 來源: {新聞來源}  
+   **[新聞標題 2]** - 來源: {新聞來源}  
    - 🕵 **摘要**: {新聞簡要內容}  
    - 🔍 **影響分析**: {影響描述}  
-
 ... 到第5則
-
-2️⃣ **[新聞標題 5]** - 來源: {新聞來源}  
+   **[新聞標題 5]** - 來源: {新聞來源}  
    - 🕵 **摘要**: {新聞簡要內容}  
    - 🔍 **影響分析**: {影響描述}   
-
 📉 **市場整體情緒**：當前市場對 {company} **(樂觀/中性/悲觀)**，短期內可能的波動範圍為 **(X%)**。  
 
 ---
-
-## **🏭 4️⃣ 產業與競爭對手分析**
+## **🏭 四 產業與競爭對手分析**
 🌍 **行業趨勢**
 - 該公司所在產業的 **增長潛力 (高/中/低)**，近期影響該行業的 **關鍵趨勢 (科技創新/監管變化/需求變動)**。  
 - 主要競爭對手包括 **(競爭對手 A, 競爭對手 B)**，該公司在 **(市場份額/技術創新/財務穩健度)** 方面 **(具有優勢/處於劣勢/競爭激烈)**。  
 
 ---
 
-## **📌 5️⃣ 綜合結論與投資建議**
+## **📌 五 綜合結論與投資建議**
 📌 **短期投資建議**
 ✅ 適合進場時機：**(技術分析顯示股價超賣，具備短期反彈機會)**  
 ❌ 風險因素：**(股價波動性過大/市場情緒偏弱)**  
@@ -523,6 +522,59 @@ graph = graph_builder.compile()
 #     format="%(asctime)s - %(levelname)s - %(message)s"
 # )
 
+# 添加 DIFY LLM 查詢功能
+async def llm_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """LLM API 查詢功能"""
+    query = " ".join(context.args) if context.args else None
+    if not query:
+        await update.message.reply_text("❌ 請提供問題內容，例如：/llm AVGO 的股價前景如何？")
+        return
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "inputs": {},  # 空 inputs
+        "query": query,
+        "response_mode": "streaming",  # Streaming 模式
+        "conversation_id": "",
+        "user": str(update.effective_user.id)
+    }
+
+    try:
+        await update.message.reply_text("🤖 正在生成回應，請稍候...")
+        # 發送 POST 請求
+        response = requests.post(LLM_ENDPOINT, headers=headers, json=payload, stream=True)
+        response.raise_for_status()
+        
+        # 處理 Streaming 回應
+        ai_response = ""
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode("utf-8")
+                if decoded_line.startswith("data:"):
+                    try:
+                        chunk = json.loads(decoded_line[5:].strip())
+                        if "answer" in chunk:
+                            ai_response += chunk["answer"]
+                    except json.JSONDecodeError:
+                        print(f"無法解析 JSON: {decoded_line}")
+        
+        # 發送完整 AI 回應
+        if ai_response:
+            await update.message.reply_text(f"🤖 **AI 回應**：\n\n{ai_response}", parse_mode="Markdown")
+        else:
+            await update.message.reply_text("⚠️ 收到空回應，請稍後再試。")
+    
+    except requests.exceptions.RequestException as e:
+        await update.message.reply_text(f"❌ 發送請求時發生錯誤：{str(e)}")
+    except Exception as e:
+        print(f"LLM 查詢錯誤: {str(e)}")
+        traceback.print_exc()
+        await update.message.reply_text(f"❌ 發生未知錯誤：{str(e)}")
+
+
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 # 設定字體
@@ -550,7 +602,8 @@ async def reset_commands(application):
         BotCommand("n", "查詢美股新聞"),
         BotCommand("ny", "查詢台股新聞"),
         BotCommand("p", "預測公司股價 (5 天區間)"),
-        BotCommand("ai", "綜合分析該公司股票值不值得購入投資"),
+        BotCommand("ai", "輸入股票代號 回答該公司股票值不值得購入投資"),
+        BotCommand("llm", "使用 LLM 回答公司股票問題 可以配合 ai指令使用 "),
         BotCommand("h", "顯示其他股票工具連結")
     ]
     await application.bot.set_my_commands(commands)
@@ -922,12 +975,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• `/p 股票代碼` - 預測公司股價 (範例：`/p META`)\n"
         "• `/n 股票代碼` - 查詢公司的英文新聞 (範例：`/n AAPL`)\n"
         "• `/ny 股票代碼` - 查詢公司的中文新聞 (範例：`/ny 2002.TW`)\n\n"
+        "• `/llm 問題` - 使用 LLM 回答任何問題 (範例：`/llm AVGO 的股價前景如何？`)\n\n"
         "請選擇以下功能："
     )
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("/s 2330.TW  查詢股價和K線圖"), KeyboardButton("/n TSLA 查詢美股新聞")],
-            [KeyboardButton("/ny 2330.TW 查詢台股新聞"), KeyboardButton("/ai TSLA 綜合分析")]
+            [KeyboardButton("/ny 2330.TW 查詢台股新聞"), KeyboardButton("/ai TSLA 綜合分析")],
+            [KeyboardButton("/llm 請介紹一下AMD如何 ")]
         ],
         resize_keyboard=True
     )
@@ -942,6 +997,7 @@ def main():
     app.add_handler(CommandHandler("ny", taiwan_stock_news))
     app.add_handler(CommandHandler("p", prophet_predict))
     app.add_handler(CommandHandler("ai", ai_query))
+    app.add_handler(CommandHandler("llm", llm_query))
     app.add_handler(CommandHandler("h", tools_help))
     # 非指令文字訊息觸發防呆提示
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, default_message_handler))
