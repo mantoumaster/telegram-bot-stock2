@@ -40,133 +40,61 @@ load_dotenv()
 
 # 基本面分析 Prompt（繁體中文）
 FUNDAMENTAL_ANALYST_PROMPT = """
-# 📢 **{company} 投資分析報告**
+You are a fundamental analyst specializing in evaluating company (whose symbol is {company}) performance based on stock prices, technical indicators, financial metrics, recent news, industry trends, competitor positioning, and financial ratios. Your task is to provide a comprehensive summary.
 
-你是一名專業的**基本面分析師 (Fundamental Analyst)**，專門根據 **股票價格、技術指標、財務數據、新聞趨勢、行業環境與競爭對手分析** 來評估公司的投資價值。  
-
-你可以使用以下工具來獲取必要數據：
-1. **get_stock_prices**: 提取股票價格數據與技術指標 (如 RSI, MACD, VWAP, Stochastic Oscillator)  
-2. **get_financial_metrics**: 獲取關鍵財務指標 (如 P/E, P/B, Debt-to-Equity, Profit Margin 等)  
-3. **get_financial_news**: 提取最新的新聞報導，分析市場情緒對股價的影響  
-
----
-📋 **公司簡介**
-- {company} 的主要業務範圍與核心產品/服務
-- 成立時間、總部所在地、主要市場與區域
-- 公司願景與發展策略
-
-💰 **市場評估**
-- **股票代號**: {ticker}
-- **總市值**: {market_cap} (USD/TWD/HKD)
-- **所屬產業**: {industry}
-
-🥇 **競爭對手比較**
-- 主要競爭對手包括 **(競爭對手 A, 競爭對手 B)**
-
-## **📈 1️⃣ 技術分析 (Technical Analysis)**
-📊 **近期股價走勢**
-- 分析 {company} 在過去 3 個月內的價格趨勢，判斷是否有 **上升、下降或橫盤整理** 的走勢。  
-- 確認重要的 **支撐/壓力位**，判斷市場動能變化。  
-
-📉 **技術指標分析**
-- **RSI (相對強弱指數)**：高於 70 代表超買，低於 30 代表超賣。  
-- **MACD (移動平均收斂發散指標)**：確認趨勢變化的潛在信號。  
-- **VWAP (成交量加權平均價)**：觀察市場主力資金流向。  
-- **Stochastic Oscillator (隨機震盪指標)**：判斷價格動能變化。  
-
-🔹 **技術總結**：當前技術指標顯示 **{company} 處於 (上升/下降/震盪) 趨勢**，短期內可能 **(上漲/下跌/橫盤整理)**。  
+You have access to the following tools:
+1. **get_stock_prices**: Retrieves stock price data and technical indicators.
+2. **get_financial_metrics**: Retrieves key financial metrics and financial ratios.
+3. **get_financial_news**: Retrieves the latest financial news related to the stock.
+4. **get_industry_data** *(if available)*: Retrieves industry trends and competitive positioning information.
 
 ---
 
-## **💰 2️⃣ 財務分析 (Fundamental Analysis)**
-📊 **公司財務健康狀況**
-- **營收表現**:
-  - 總營收: {數據}
-  - 營收成長率: {數據}%
-- **獲利能力**：
-  - **毛利率**: {數據} %  
-  - **營業利潤率**: {數據} %  
-  - **淨利率**: {數據} %  
-  - **結論**：該公司的獲利能力 **(優異/良好/一般/較差)**。  
-- **財務穩健度**：
-  - **流動比率 (Current Ratio)**: {數據}  
-  - **速動比率 (Quick Ratio)**: {數據}
-  - **負債權益比 (Debt-to-Equity Ratio)**: {數據}  
-  - **結論**：該公司的財務結構 **(穩健/風險較高/槓桿過高)**，短期償債能力 **(良好/中等/較差)**。  
-📈 **市場估值**
-- **本益比 (P/E Ratio)**：{數據}，代表市場對該公司未來收益的預期。  
-- **前瞻本益比 (Forward P/E)**: {數據}，顯示市場對公司未來盈利的估計。
-- **市淨率 (P/B Ratio)**：{數據}，顯示該公司的市場估值是否合理。  
-- **股息收益率**: {數據}%，表示投資者從股息中獲取的回報率。
-- **結論**: 根據上述估值指標，該公司目前的估值 **(被低估/合理/偏高)**。  
-🔹 **財務總結**：該公司當前的財務狀況 **(穩定/成長中/財務壓力大)**，投資人應該 **(關注獲利能力/審慎評估負債狀況/考慮市場估值是否合理)**。
+### Your Task:
+1. Use the provided stock symbol to query the tools.
+2. Analyze the following areas in sequence:
+   - **Stock price movements and technical indicators**: Examine recent price trends, volatility, and signals from RSI, MACD, VWAP, and other indicators.
+   - **Financial health and key financial ratios**: Assess profitability, liquidity, solvency, and operational efficiency using metrics such as:
+     - Profitability Ratios: Gross Profit Margin, Net Profit Margin, Operating Profit Margin
+     - Liquidity Ratios: Current Ratio, Quick Ratio
+     - Solvency Ratios: Debt-to-Equity Ratio, Interest Coverage Ratio
+     - Efficiency Ratios: Inventory Turnover, Accounts Receivable Turnover
+     - Market Ratios: Price-to-Earnings Ratio (P/E), Price-to-Book Ratio (P/B)
+   - **Recent news and market sentiment**: Identify significant events or trends impacting the company's market perception.
+   - **Industry analysis**: Evaluate the industry’s growth trends, technological advancements, and regulatory environment. Identify how the industry is evolving and how it affects the target company.
+   - **Competitor analysis**: Compare the target company with key competitors in terms of market share, financial health, and growth potential.
+
+3. Provide a concise and structured summary covering all sections, ensuring each area has actionable insights.
 
 ---
 
-## **📰 3️⃣ 最新新聞與市場情緒**
-📢 **近期重大新聞**
-1️⃣ **[新聞標題 1]** - 來源: {新聞來源}  
-   - 🕵 **摘要**: {新聞簡要內容}  
-   - 🔍 **影響分析**: 這可能對 {company} 的 **(股價/市場情緒/財報預期)** 產生 **(正面/負面/中性) 影響**。  
-
-2️⃣ **[新聞標題 2]** - 來源: {新聞來源}  
-   - 🕵 **摘要**: {新聞簡要內容}  
-   - 🔍 **影響分析**: {影響描述}  
-
-... 到第5則
-
-2️⃣ **[新聞標題 5]** - 來源: {新聞來源}  
-   - 🕵 **摘要**: {新聞簡要內容}  
-   - 🔍 **影響分析**: {影響描述}   
-
-📉 **市場整體情緒**：當前市場對 {company} **(樂觀/中性/悲觀)**，短期內可能的波動範圍為 **(X%)**。  
-
----
-
-## **🏭 4️⃣ 產業與競爭對手分析**
-🌍 **行業趨勢**
-- 該公司所在產業的 **增長潛力 (高/中/低)**，近期影響該行業的 **關鍵趨勢 (科技創新/監管變化/需求變動)**。  
-- 主要競爭對手包括 **(競爭對手 A, 競爭對手 B)**，該公司在 **(市場份額/技術創新/財務穩健度)** 方面 **(具有優勢/處於劣勢/競爭激烈)**。  
-
----
-
-## **📌 5️⃣ 綜合結論與投資建議**
-📌 **短期投資建議**
-✅ 適合進場時機：**(技術分析顯示股價超賣，具備短期反彈機會)**  
-❌ 風險因素：**(股價波動性過大/市場情緒偏弱)**  
-📈 預測短期股價變動範圍：**(X% ~ Y%)**  
-
-📌 **中長期投資建議**
-✅ 適合投資人類型：**(適合價值投資者/成長型投資者/短線交易者)**  
-❌ 風險因素：**(行業競爭激烈/公司財務狀況不穩)**  
-📉 建議操作策略：**(逢低買入/觀望/減倉/賣出)**  
-
-💡 **結論**  
-
-📌 **短期投資建議**
-✅ 適合進場時機：**(技術分析顯示股價超賣，具備短期反彈機會)**  
-❌ 風險因素：**(股價波動性過大/市場情緒偏弱)**  
-📈 預測短期股價變動範圍：**(X% ~ Y%)**  
-
-📌 **中長期投資建議**
-✅ 適合投資人類型：**(適合價值投資者/成長型投資者/短線交易者)**  
-❌ 風險因素：**(行業競爭激烈/公司財務狀況不穩)**  
-📉 建議操作策略：**(逢低買入/觀望/減倉/賣出)**  
-
-綜合考量 **技術面、財務面、新聞情緒、行業趨勢**，目前對 {company} 的投資評價為：  
-📊 **(買入/持有/減倉/賣出)**  
-📈 **短期目標價：X 元**  
-📉 **中長期預估價：Y 元**  
-⏰ **建議持有時間：(短期/中期/長期)**
-
-
+### Output Format : 以下請用繁體中文輸出
+{
+  "stock": "",
+  "price_analysis": "<股票價格趨勢與技術指標分析>",
+  "technical_analysis": "<技術指標分析與見解>",
+  "financial_analysis": {
+      "profitability_ratios": "<獲利能力比率分析>",
+      "liquidity_ratios": "<流動性比率分析>",
+      "solvency_ratios": "<償債能力比率分析>",
+      "efficiency_ratios": "<營運效率比率分析>",
+      "market_ratios": "<市場表現比率分析>",
+      "summary": "<財務整體健康狀況與分析結論>"
+  },
+  "news_analysis": "<近期新聞摘要與其對股價的潛在影響>",
+  "industry_analysis": "<產業趨勢、成長動力與潛在風險>",
+  "competitor_analysis": "<主要競爭對手比較與市場地位分析>",
+  "final_summary": "<整體綜合結論與投資建議>",
+  "Asked Question Answer": "<根據上述分析的具體回答>"
+}
 """
 
 # --------------- Tools ---------------
+
 @tool
-def get_stock_prices(ticker: str) -> Dict:
-    """Fetches historical stock price data and technical indicators for a given ticker."""
-    print(f"=== [Tool] get_stock_prices called with ticker: {ticker}")
+def get_stock_prices(ticker: str) -> Union[Dict, str]:
+    """Fetches historical stock price data and technical indicator for a given ticker."""
+    print("=== [Tool] get_stock_prices called with ticker:", ticker)
     try:
         data = yf.download(
             ticker,
@@ -184,23 +112,24 @@ def get_stock_prices(ticker: str) -> Dict:
         from ta.trend import MACD
         from ta.volume import volume_weighted_average_price
 
-        # 計算技術指標
         indicators = {}
 
         # RSI
-        rsi_series = RSIIndicator(df['Close'], window=14).rsi().iloc[-1]
-        indicators["RSI"] = round(rsi_series, 2)
+        rsi_series = RSIIndicator(df['Close'], window=14).rsi().iloc[-12:]
+        indicators["RSI"] = {date.strftime('%Y-%m-%d'): int(value) 
+                             for date, value in rsi_series.dropna().to_dict().items()}
 
         # Stochastic Oscillator
-        sto_series = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch().iloc[-1]
-        indicators["Stochastic_Oscillator"] = round(sto_series, 2)
+        sto_series = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch().iloc[-12:]
+        indicators["Stochastic_Oscillator"] = {date.strftime('%Y-%m-%d'): int(value) 
+                                               for date, value in sto_series.dropna().to_dict().items()}
 
         # MACD
         macd = MACD(df['Close'])
-        macd_series = macd.macd().iloc[-1]
-        macd_signal_series = macd.macd_signal().iloc[-1]
-        indicators["MACD"] = round(macd_series, 2)
-        indicators["MACD_Signal"] = round(macd_signal_series, 2)
+        macd_series = macd.macd().iloc[-12:]
+        indicators["MACD"] = {date.strftime('%Y-%m-%d'): int(value) for date, value in macd_series.to_dict().items()}
+        macd_signal_series = macd.macd_signal().iloc[-12:]
+        indicators["MACD_Signal"] = {date.strftime('%Y-%m-%d'): int(value) for date, value in macd_signal_series.to_dict().items()}
 
         # VWAP
         vwap_series = volume_weighted_average_price(
@@ -208,214 +137,54 @@ def get_stock_prices(ticker: str) -> Dict:
             low=df['Low'],
             close=df['Close'],
             volume=df['Volume'],
-        ).iloc[-1]
-        indicators["VWAP"] = round(vwap_series, 2)
+        ).iloc[-12:]
+        indicators["vwap"] = {date.strftime('%Y-%m-%d'): int(value) for date, value in vwap_series.to_dict().items()}
 
         return {
-            "stock": ticker,
-            "latest_close_price": round(df['Close'].iloc[-1], 2),
-            "indicators": indicators
+            'stock_price': data.to_dict(orient='records'),
+            'indicators': indicators
         }
     except Exception as e:
-        return {"error": f"無法獲取技術分析數據: {str(e)}"}
+        return f"Error fetching price data: {str(e)}"
 
 @tool
-def get_financial_metrics(ticker: str) -> Dict:
+def get_financial_news(ticker: str) -> Union[Dict, str]:
+    """Fetches the latest financial news related to a given ticker."""
+    print("=== [Tool] get_financial_news called with ticker:", ticker)
+    try:
+        stock = yf.Ticker(ticker)
+        news = stock.news  # 從 Yahoo Finance 獲取新聞
+        if not news:
+            return {"news": "No recent news found."}
+
+        # 只取最新5則新聞
+        latest_news = [
+            {
+                "title": item.get('title'),
+                "publisher": item.get('publisher'),
+                "link": item.get('link'),
+                "published_date": item.get('providerPublishTime')
+            }
+            for item in news[:5]
+        ]
+        return {"news": latest_news}
+    except Exception as e:
+        return f"Error fetching news: {str(e)}"
+
+def get_financial_metrics(ticker: str) -> Union[Dict, str]:
     """Fetches key financial ratios for a given ticker."""
-    print(f"=== [Tool] get_financial_metrics called with ticker: {ticker}")
+    print("=== [Tool] get_financial_metrics called with ticker:", ticker)
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
-        
-        # 獲取營收增長率，使用yfinance直接提供的數據
-        revenue_growth = info.get('revenueGrowth', 'N/A')
-        if revenue_growth is not None and revenue_growth != 'N/A':
-            revenue_growth = round(revenue_growth * 100, 2)
-        
-        # 注意：yfinance並不直接提供確定的競爭對手信息，這裡我們省略這部分
-        
         return {
-            "stock": ticker,
-            "company_info": {
-                "name": info.get('longName', 'N/A'),
-                "sector": info.get('sector', 'N/A'),
-                "industry": info.get('industry', 'N/A'),
-                "market_cap": info.get('marketCap', 'N/A'),
-                "market_cap_billions": round(info.get('marketCap', 0) / 1e9, 2) if info.get('marketCap') else 'N/A'
-            },
-            "revenue_data": {
-                "total_revenue": info.get('totalRevenue', 'N/A'),
-                "revenue_growth": revenue_growth
-            },
-            "profitability_ratios": {
-                "gross_profit_margin": info.get('grossMargins', 'N/A'),
-                "operating_profit_margin": info.get('operatingMargins', 'N/A'),
-                "net_profit_margin": info.get('profitMargins', 'N/A')
-            },
-            "financial_health": {
-                "current_ratio": info.get('currentRatio', 'N/A'),
-                "quick_ratio": info.get('quickRatio', 'N/A'),
-                "debt_to_equity": info.get('debtToEquity', 'N/A')
-            },
-            "market_ratios": {
-                "pe_ratio": info.get('trailingPE', 'N/A'),
-                "forward_pe": info.get('forwardPE', 'N/A'),
-                "price_to_book": info.get('priceToBook', 'N/A'),
-                "dividend_yield": info.get('dividendYield', 'N/A')
-            }
+            'pe_ratio': info.get('forwardPE'),
+            'price_to_book': info.get('priceToBook'),
+            'debt_to_equity': info.get('debtToEquity'),
+            'profit_margins': info.get('profitMargins')
         }
     except Exception as e:
-        return {"error": f"無法獲取財務指標數據: {str(e)}"}
-
-
-@tool
-def get_financial_news(ticker: str) -> Dict:
-    """Fetches the latest financial news related to a given ticker using multiple strategies."""
-    print(f"=== [Tool] get_financial_news called with ticker: {ticker}")
-    try:
-        # 方法1: 嘗試使用yfinance
-        stock = yf.Ticker(ticker)
-        news = stock.news
-        latest_news = []
-        
-        if news and len(news) > 0:
-            for idx, article in enumerate(news[:5]):
-                try:
-                    # 檢查是否有 content 字段
-                    if 'content' in article:
-                        # 嘗試解析 content 字段
-                        content = article['content']
-                        print(f"=== [Debug] News {idx+1} content type: {type(content)}")
-                        if isinstance(content, dict):
-                            # 從內容字典中提取標題
-                            title = content.get('title', "無標題")
-                            # 嘗試從各種可能的地方獲取連結
-                            link = "#"
-                            if 'clickThroughUrl' in content and isinstance(content['clickThroughUrl'], dict) and 'url' in content['clickThroughUrl']:
-                                link = content['clickThroughUrl']['url']
-                            elif 'canonicalUrl' in content and isinstance(content['canonicalUrl'], dict) and 'url' in content['canonicalUrl']:
-                                link = content['canonicalUrl']['url']
-                            elif 'url' in content:
-                                link = content['url']
-                            elif 'link' in content:
-                                link = content['link']
-                            
-                            publisher = article.get('publisher', '未知來源')
-                            published_date = article.get('providerPublishTime', int(time.time()))
-                            
-                            latest_news.append({
-                                "title": title,
-                                "publisher": publisher,
-                                "link": link,
-                                "published_date": published_date
-                            })
-                        elif isinstance(content, str):
-                            # 如果是字符串，嘗試解析為 JSON
-                            try:
-                                content_json = json.loads(content)
-                                title = content_json.get('title', "無標題")
-                                link = content_json.get('url', "#")
-                                publisher = article.get('publisher', '未知來源')
-                                published_date = article.get('providerPublishTime', int(time.time()))
-                                
-                                latest_news.append({
-                                    "title": title,
-                                    "publisher": publisher,
-                                    "link": link,
-                                    "published_date": published_date
-                                })
-                            except json.JSONDecodeError:
-                                print(f"=== [Debug] 無法解析 content 字符串為 JSON")
-                                continue
-                    else:
-                        # 直接使用標準欄位
-                        title = article.get('title', '標題不可用')
-                        publisher = article.get('publisher', '未知來源')
-                        link = article.get('link', '#')
-                        published_date = article.get('providerPublishTime', int(time.time()))
-                        
-                        latest_news.append({
-                            "title": title,
-                            "publisher": publisher,
-                            "link": link,
-                            "published_date": published_date
-                        })
-                except Exception as article_error:
-                    print(f"=== [Debug] 解析新聞項目 {idx+1} 時出錯: {str(article_error)}")
-                    continue
-        
-        # 方法2: 如果yfinance無法獲取，使用網頁爬取
-        if not latest_news:
-            print(f"=== [Debug] 使用備用方案抓取新聞...")
-            try:
-                url = f"https://finance.yahoo.com/quote/{ticker}/news"
-                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-                response = requests.get(url, headers=headers)
-                soup = BeautifulSoup(response.text, 'html.parser')
-                
-                # 找出新聞標題和連結
-                news_items = []
-                
-                # 尋找包含新聞的元素
-                for article in soup.select('div.Ov\(h\)'):
-                    title_elem = article.select_one('a')
-                    if title_elem and title_elem.text:
-                        title = title_elem.text.strip()
-                        link = title_elem.get('href', '')
-                        if link.startswith('/'):
-                            link = f"https://finance.yahoo.com{link}"
-                        if title and link:
-                            news_items.append((title, link))
-                
-                if not news_items:  # 如果找不到特定結構，使用更通用的搜索
-                    for link in soup.find_all('a', href=True):
-                        if '/news/' in link.get('href', '') and link.text:
-                            title = link.text.strip()
-                            href = link['href']
-                            full_url = f"https://finance.yahoo.com{href}" if href.startswith('/') else href
-                            if title and len(title) > 15:  # 過濾可能不是標題的短文本
-                                news_items.append((title, full_url))
-                
-                # 移除重複的新聞項目
-                news_items = list(set(news_items))
-                
-                # 添加到回覆中
-                for i, (title, link) in enumerate(news_items[:5]):
-                    latest_news.append({
-                        "title": title,
-                        "publisher": "Yahoo Finance",
-                        "link": link,
-                        "published_date": int(time.time())
-                    })
-            except Exception as scrape_error:
-                print(f"=== [Error] 備用爬蟲失敗: {str(scrape_error)}")
-                import traceback
-                traceback.print_exc()
-        
-        # 如果仍然沒有新聞，提供一個默認回應
-        if not latest_news:
-            latest_news.append({
-                "title": f"無法找到 {ticker} 的相關新聞",
-                "publisher": "系統通知",
-                "link": f"https://finance.yahoo.com/quote/{ticker}",
-                "published_date": int(time.time())
-            })
-            
-        return {"stock": ticker, "news": latest_news}
-    
-    except Exception as e:
-        print(f"=== [Error] 獲取新聞失敗: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return {
-            "stock": ticker, 
-            "news": [{
-                "title": f"獲取 {ticker} 新聞時發生錯誤",
-                "publisher": "系統通知",
-                "link": f"https://finance.yahoo.com/quote/{ticker}",
-                "published_date": int(time.time())
-            }]
-        }
+        return f"Error fetching ratios: {str(e)}"
 
 # --------------- LangGraph / State ---------------
 class State(TypedDict):
@@ -518,10 +287,10 @@ graph = graph_builder.compile()
 # ---------------------------------------------------------
 # -------------- Telegram Bot 部分 ----------------
 
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s - %(levelname)s - %(message)s"
-# )
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
