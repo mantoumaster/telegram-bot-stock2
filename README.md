@@ -5,6 +5,12 @@
 這是一個基於 Python 和 `python-telegram-bot` 開發的 **Telegram 股票資訊機器人**，提供即時股票數據查詢、K 線圖生成，股價預測功能，以及強大的基本面分析和 AI 智能回應。  
 目前支援 **台股** 和 **美股** 股票。
 
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+
 ### 功能列表：
 
 1. **股價查詢與 K 線圖**
