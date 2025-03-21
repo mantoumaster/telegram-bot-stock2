@@ -423,111 +423,6 @@ llm = ChatOpenAI(
 )
 llm_with_tool = llm.bind_tools(tools)
 
-
-async def ai2_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """使用投資大師智能分析 API 進行股票分析"""
-    
-    if len(context.args) == 0:
-        await update.message.reply_text("❌ 請提供股票代碼，例如：/ai2 TSLA")
-        return
-    
-    ticker = context.args[0].upper()
-    
-    try:
-        # 發送請求到 API
-        await update.message.reply_text(f"🔍 正在分析 {ticker}，這可能需要幾秒鐘...")
-        
-        api_url = "http://dns.glsoft.ai:6000/api/analysis"
-        headers = {"Content-Type": "application/json"}
-        payload = {
-            "tickers": ticker.lower(),  # API 需要小寫的股票代碼
-            "selectedAnalysts": [
-                "ben_graham", "bill_ackman", "cathie_wood", "charlie_munger",
-                 "nancy_pelosi", "warren_buffett", "wsb", "technical_analyst",
-                "fundamentals_analyst", "sentiment_analyst", "valuation_analyst"
-            ],
-            "modelName": "gpt-4o"
-        }
-        
-        response = requests.post(api_url, headers=headers, json=payload)
-        response.raise_for_status()  # 如果請求失敗，拋出異常
-        
-        # 解析 API 回應
-        data = response.json()
-        
-        # 提取目標股票的數據
-        ticker_data = data["analyst_signals"]
-        decisions = data["decisions"][ticker.lower()]
-        
-        # 準備回覆內容
-        reply = f"📊 **{ticker} 多位投資大師分析結果**\n\n"
-        
-        # 添加決策摘要
-        action_dict = {
-            "buy": "買入",
-            "sell": "賣出",
-            "hold": "持有",
-            "short": "做空"
-        }
-        action_trans = action_dict.get(decisions['action'].lower(), decisions['action'].upper())
-        reply += f"**最終決策**: {action_trans} (信心度: {decisions['confidence']}%)\n"
-        reply += f"**建議數量**: {decisions['quantity']} 股\n"
-        reply += f"**理由**: {decisions['reasoning']}\n\n"
-        
-        # 添加各個分析師的觀點
-        reply += "**各投資大師觀點**:\n"
-        
-        # 定義重要分析師列表和他們的中文名字
-        key_analysts = {
-            "warren_buffett_agent": "👴 華倫·巴菲特",
-            "cathie_wood_agent": "👩‍💼 凱薩琳·伍德",
-            "charlie_munger_agent": "🧓 查理·蒙格",
-            "ben_graham_agent": "📚 班傑明·葛拉漢",
-            "bill_ackman_agent": "👨‍💼 比爾·阿克曼",
-            "wsb_agent": "🦍 華爾街賭徒",
-            "fundamentals_agent": "📈 基本面分析師",
-            "technical_analyst_agent": "📉 技術分析師",
-            "valuation_agent": "💰 估值分析師",
-            "sentiment_agent": "🔍 情緒分析師",
-            "nancy_pelosi_agent": "👵 南希·佩洛西"
-        }
-        
-        # 信號中文翻譯
-        signal_dict = {
-            "bearish": "看空",
-            "bullish": "看多",
-            "neutral": "中立"
-        }
-        
-        # 添加每個分析師的意見（只包含重要分析師）
-        for agent_name, data in ticker_data.items():
-            if agent_name in key_analysts and ticker.lower() in data:
-                analyst_info = data[ticker.lower()]
-                if "signal" in analyst_info:
-                    signal = analyst_info["signal"]
-                    signal_emoji = "🔴" if signal == "bearish" else "🟢" if signal == "bullish" else "⚪"
-                    signal_trans = signal_dict.get(signal, signal.capitalize())
-                    
-                    confidence = analyst_info.get("confidence", "N/A")
-                    reason_short = analyst_info.get("reasoning", "未提供")
-                    if isinstance(reason_short, dict):
-                        # 如果 reasoning 是字典，嘗試提取關鍵信息
-                        reason_short = "詳細分析請查看原始數據"
-                    elif isinstance(reason_short, str) and len(reason_short) > 100:
-                        # 如果是長文本，截取前部分
-                        reason_short = reason_short[:100] + "..."
-                    
-                    reply += f"{key_analysts[agent_name]}: {signal_emoji} {signal_trans} (信心度: {confidence}%)\n"
-        
-        # 發送回應
-        await update.message.reply_text(reply, parse_mode="Markdown")
-        
-    except Exception as e:
-        error_msg = f"❌ 分析時發生錯誤：{str(e)}"
-        print(f"=== [Error] {error_msg}")
-        traceback.print_exc()
-        await update.message.reply_text(error_msg)
-
 # ----------- 修正版 fundamental_analyst 函數 -----------
 def fundamental_analyst(state: State):
     """使用工具鏈進行基本面分析"""
@@ -697,7 +592,6 @@ async def reset_commands(application):
         BotCommand("ny", "查詢台股新聞"),
         BotCommand("p", "預測公司股價 (5 天區間)"),
         BotCommand("ai", "輸入股票代號 回答該公司股票值不值得購入投資"),
-        BotCommand("ai2", "多位投資大師集體分析股票"), 
         BotCommand("llm", "使用 LLM 回答公司股票問題 可以配合 ai指令使用 "),
         BotCommand("h", "顯示其他股票工具連結")
     ]
@@ -1038,8 +932,7 @@ async def tools_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🛠 **其他股票工具**\n\n"
         "📊 台股預測 (LSTM)：[點擊使用](https://huggingface.co/spaces/tbdavid2019/twStock-predict)\n"
         "📈 美股台股潛力股預測 (LSTM)：[點擊使用](https://huggingface.co/spaces/tbdavid2019/twStock-Underdogs)\n"
-        "🔮 美股台股預測 (Prophet)：[點擊使用](https://huggingface.co/spaces/tbdavid2019/Stock-Predict-Prophet)\n"
-        "🔮 多位投資大師集體分析股票：[點擊使用](https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund)"
+        "🔮 美股台股預測 (Prophet)：[點擊使用](https://huggingface.co/spaces/tbdavid2019/Stock-Predict-Prophet)"
     )
     await update.message.reply_text(message, parse_mode="Markdown")
 
@@ -1049,8 +942,6 @@ async def default_message_handler(update: Update, context: ContextTypes.DEFAULT_
         "❓ 您好，請使用以下指令來操作本 Bot：\n\n"
         "• `/ai 股票代碼` - 綜合分析該公司股票值不值得購入投資\n"
         "   範例：`/ai TSLA`\n\n"
-        "• `/ai2 股票代碼` - 多位投資大師集體分析股票\n"
-        "   範例：`/ai2 TSLA`\n\n"
         "• `/s 股票代碼` - 查詢公司股價和K線圖\n"
         "   範例：`/s TSLA`\n\n"
         "• `/p 股票代碼` - 預測公司股價 (例如預測未來5天區間)\n"
@@ -1069,19 +960,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🎉 歡迎使用DAVID888股票資訊機器人！\n\n"
         "本 Bot 提供以下功能：\n"
         "• `/ai 股票代碼` - 綜合分析該公司股票值不值得購入投資 (範例：`/ai TSLA`)\n"
-        "• `/ai2 股票代碼` - 多位投資大師集體分析股票 (範例：`/ai2 AMD`)\n"  # 添加新命令描述
-        "• `/s 股票代碼` - 查詢公司股價和K線圖 (範例：`/s PLTR`)\n"
+        "• `/s 股票代碼` - 查詢公司股價和K線圖 (範例：`/s TSLA`)\n"
         "• `/p 股票代碼` - 預測公司股價 (範例：`/p META`)\n"
         "• `/n 股票代碼` - 查詢公司的英文新聞 (範例：`/n AAPL`)\n"
-        "• `/ny 股票代碼` - 查詢台灣公司的中文新聞 (範例：`/ny 2002.TW`)\n\n"
-        "• `/llm 問題` - 使用 LLM 回答任何問題 (範例：`/llm AAPL 的股價前景如何？`)\n\n"
+        "• `/ny 股票代碼` - 查詢公司的中文新聞 (範例：`/ny 2002.TW`)\n\n"
+        "• `/llm 問題` - 使用 LLM 回答任何問題 (範例：`/llm AVGO 的股價前景如何？`)\n\n"
         "請選擇以下功能："
     )
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton("/s 2330.TW  查詢股價和K線圖"), KeyboardButton("/n TSLA 查詢美股新聞")],
             [KeyboardButton("/ny 2330.TW 查詢台股新聞"), KeyboardButton("/ai TSLA 綜合分析")],
-            [KeyboardButton("/ai2 TSLA 投資大師分析"),KeyboardButton("/llm 請介紹一下AMD如何 ")]
+            [KeyboardButton("/llm 請介紹一下AMD如何 ")]
         ],
         resize_keyboard=True
     )
@@ -1096,7 +986,6 @@ def main():
     app.add_handler(CommandHandler("ny", taiwan_stock_news))
     app.add_handler(CommandHandler("p", prophet_predict))
     app.add_handler(CommandHandler("ai", ai_query))
-    app.add_handler(CommandHandler("ai2", ai2_analysis))  
     app.add_handler(CommandHandler("llm", llm_query))
     app.add_handler(CommandHandler("h", tools_help))
     # 非指令文字訊息觸發防呆提示

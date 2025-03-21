@@ -1,5 +1,5 @@
 # 使用官方 Python 3.9 基底映像檔
-FROM python:3.9
+FROM python:3.11
 
 # 設定工作目錄
 WORKDIR /app
