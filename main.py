@@ -442,11 +442,11 @@ async def ai2_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
         payload = {
             "tickers": ticker.lower(),  # API 需要小寫的股票代碼
             "selectedAnalysts": [
-                "ben_graham", "bill_ackman", "cathie_wood", "charlie_munger",
+                "ben_graham", "bill_ackman", "cathie_wood", "charlie_munger", "michael_burry", "peter_lynch",
                  "nancy_pelosi", "warren_buffett", "wsb", "technical_analyst",
                 "fundamentals_analyst", "sentiment_analyst", "valuation_analyst"
             ],
-            "modelName": "gpt-4o"
+            "modelName": "gpt-4o-mini"
         }
         
         response = requests.post(api_url, headers=headers, json=payload)
@@ -480,16 +480,18 @@ async def ai2_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # 定義重要分析師列表和他們的中文名字
         key_analysts = {
             "warren_buffett_agent": "👴 華倫·巴菲特",
-            "cathie_wood_agent": "👩‍💼 凱薩琳·伍德",
+            "cathie_wood_agent": "👩‍💼 凱西·伍德（木頭姐）",
             "charlie_munger_agent": "🧓 查理·蒙格",
             "ben_graham_agent": "📚 班傑明·葛拉漢",
             "bill_ackman_agent": "👨‍💼 比爾·阿克曼",
-            "wsb_agent": "🦍 華爾街賭徒",
+            "nancy_pelosi_agent": "👵 南希·佩洛西",
+            "michael_burry_agent": "😏 麥可·貝瑞",
+            "peter_lynch_agent": "🤠 彼得·林區",
+            "wsb_agent": "🦍 華爾街論壇看法",
             "fundamentals_agent": "📈 基本面分析師",
             "technical_analyst_agent": "📉 技術分析師",
             "valuation_agent": "💰 估值分析師",
-            "sentiment_agent": "🔍 情緒分析師",
-            "nancy_pelosi_agent": "👵 南希·佩洛西"
+            "sentiment_agent": "🔍 情緒分析師"
         }
         
         # 信號中文翻譯
