@@ -34,12 +34,29 @@
 
 6. **投資大師集體分析**
    - `/ai2 股票代碼`：連接專業投資分析 API，提供多位知名投資大師的集體分析：
-     - 華倫·巴菲特（Warren Buffett）- 價值投資觀點
-     - 查理·蒙格（Charlie Munger）- 理性分析視角
-     - 凱西·伍德（Cathie Wood）- 創新成長觀點
-     - 彼得·林區（Peter Lynch）- 成長股策略
-     - 麥可·貝瑞（Michael Burry）- 風險分析視角
-     - 以及基本面、技術面、估值、情緒等專業分析師觀點
+     
+     **價值投資大師 (7位)：**
+     - 👴 華倫·巴菲特 (Warren Buffett) - 長期價值投資，尋找優質企業
+     - 🧓 查理·蒙格 (Charlie Munger) - 品質投資，尋找護城河與高 ROE
+     - 📚 班傑明·葛拉漢 (Ben Graham) - 價值投資之父，重視安全邊際
+     - 👨‍💼 比爾·阿克曼 (Bill Ackman) - 激進價值投資，專注優質企業
+     - 😏 麥可·貝瑞 (Michael Burry) - 深度價值投資，尋找被低估資產
+     - 🤠 彼得·林區 (Peter Lynch) - 成長價值投資，重視 PEG Ratio
+     - 📖 菲爾·費雪 (Phil Fisher) - 成長潛力分析，重視研發與管理品質
+     
+     **成長與創新 (1位)：**
+     - 👩‍💼 凱西·伍德 (Cathie Wood) - 顛覆式創新投資，聚焦 AI、電動車、基因科技
+     
+     **技術與情緒分析 (4位)：**
+     - 👵 南希·佩洛西 (Nancy Pelosi) - 追蹤國會議員股票交易記錄
+     - 🦍 華爾街賭場 (WallStreetBets) - Reddit 社群情緒、散戶動能分析
+     - 📉 技術分析師 (Technical Analyst) - MA、RSI、MACD 等技術指標
+     - 🔍 情緒分析師 (Sentiment Analyst) - 新聞情緒分析、市場氛圍評估
+     
+     **基本面與估值分析 (2位)：**
+     - 📈 基本面分析師 (Fundamentals Analyst) - 深度財務報表分析
+     - 💰 估值分析師 (Valuation Analyst) - 企業估值模型、DCF 分析
+     
      - 最終給出綜合決策建議（買入/賣出/持有/做空）及信心度評分
 
 7. **LLM 智能回答**
@@ -177,12 +194,29 @@ It supports Taiwan Stock Exchange (TWSE) and U.S. Stocks.
 
 6. **Investment Gurus Analysis**
    - `/ai2 <stock_code>`: Connects to professional investment analysis API, providing collective analysis from multiple renowned investors:
-     - Warren Buffett - Value investing perspective
-     - Charlie Munger - Rational analysis viewpoint
-     - Cathie Wood - Innovation and growth perspective
-     - Peter Lynch - Growth stock strategy
-     - Michael Burry - Risk analysis perspective
-     - Plus fundamental, technical, valuation, and sentiment analyst viewpoints
+     
+     **Value Investing Masters (7):**
+     - 👴 Warren Buffett - Long-term value investing, seeking quality companies
+     - 🧓 Charlie Munger - Quality investing, seeking moats and high ROE
+     - 📚 Ben Graham - Father of value investing, emphasizes margin of safety
+     - 👨‍💼 Bill Ackman - Activist value investing, focuses on quality businesses
+     - 😏 Michael Burry - Deep value investing, seeks undervalued assets
+     - 🤠 Peter Lynch - Growth-at-reasonable-price, emphasizes PEG Ratio
+     - 📖 Phil Fisher - Growth potential analysis, values R&D and management quality
+     
+     **Growth & Innovation (1):**
+     - 👩‍💼 Cathie Wood - Disruptive innovation investing, focuses on AI, EVs, genomics
+     
+     **Technical & Sentiment Analysis (4):**
+     - 👵 Nancy Pelosi - Tracks congressional stock trading records
+     - 🦍 WallStreetBets - Reddit community sentiment, retail momentum analysis
+     - 📉 Technical Analyst - MA, RSI, MACD and other technical indicators
+     - 🔍 Sentiment Analyst - News sentiment analysis, market atmosphere assessment
+     
+     **Fundamentals & Valuation Analysis (2):**
+     - 📈 Fundamentals Analyst - Deep financial statement analysis
+     - 💰 Valuation Analyst - Enterprise valuation models, DCF analysis
+     
      - Final comprehensive decision (Buy/Sell/Hold/Short) with confidence score
 
 7. **LLM Smart Responses**
