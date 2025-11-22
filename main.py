@@ -40,8 +40,8 @@ load_dotenv()
 
 
 # DIFY LLM API 配置 
-LLM_ENDPOINT = "http://llm.glsoft.ai/v1/chat-messages"
-API_KEY = os.getenv("LLM_API_KEY")  # 確保在 .env 文件中添加 DIFY LLM_API_KEY
+DIFY_BASE_URL = os.getenv("DIFY_BASE_URL", "http://llm.glsoft.ai/v1/chat-messages")
+DIFY_API_KEY = os.getenv("DIFY_API_KEY")  # 確保在 .env 文件中添加 DIFY_API_KEY
 
 # 基本面分析 Prompt（繁體中文）
 
@@ -415,12 +415,27 @@ graph_builder = StateGraph(State)
 # 把三個工具都放入
 tools = [get_stock_prices, get_financial_metrics, get_financial_news]
 
-# 初始化 ChatOpenAI - 改成 gpt-4o (或你的代理服務名稱)
-llm = ChatOpenAI(
-    model_name="gpt-4o",
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-    temperature=0
-)
+# 初始化 ChatOpenAI - 從環境變數讀取模型和 base_url
+# 預設使用 gpt-4o，可透過 .env 設定 OPENAI_MODEL 來更改
+openai_model = os.getenv("OPENAI_MODEL", "gpt-4o")
+openai_base_url = os.getenv("OPENAI_BASE_URL", None)
+
+# 建立 ChatOpenAI 配置
+llm_config = {
+    "model_name": openai_model,
+    "openai_api_key": os.getenv("OPENAI_API_KEY"),
+    "temperature": 0
+}
+
+# 如果有設定 base_url，則加入配置
+if openai_base_url and openai_base_url.strip():
+    llm_config["base_url"] = openai_base_url
+    print(f"✅ 使用自訂 OpenAI Base URL: {openai_base_url}")
+
+llm = ChatOpenAI(**llm_config)
+print(f"✅ 使用 OpenAI 模型: {openai_model}")
+print(f"✅ DIFY Base URL: {DIFY_BASE_URL}")
+
 llm_with_tool = llm.bind_tools(tools)
 
 
@@ -446,7 +461,7 @@ async def ai2_analysis(update: Update, context: ContextTypes.DEFAULT_TYPE):
                  "nancy_pelosi", "warren_buffett", "wsb", "technical_analyst",
                 "fundamentals_analyst", "sentiment_analyst", "valuation_analyst"
             ],
-            "modelName": "gpt-4o-mini"
+            "modelName": "gpt-4o"
         }
         
         response = requests.post(api_url, headers=headers, json=payload)
@@ -627,7 +642,7 @@ async def llm_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {DIFY_API_KEY}",
         "Content-Type": "application/json"
     }
     payload = {
@@ -641,7 +656,7 @@ async def llm_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.reply_text("🤖 正在生成回應，請稍候...")
         # 發送 POST 請求
-        response = requests.post(LLM_ENDPOINT, headers=headers, json=payload, stream=True)
+        response = requests.post(DIFY_BASE_URL, headers=headers, json=payload, stream=True)
         response.raise_for_status()
         
         # 處理 Streaming 回應

@@ -26,13 +26,27 @@
    - `/p 股票代碼`：使用 Prophet 模型預測未來 5 天的股價範圍。
 
 5. **AI 基本面分析**
-   - `/ai 股票代碼`：提供綜合基本面分析，評估該公司股票是否值得投資，包含技術指標、財務健康度及市場情緒分析。
+   - `/ai 股票代碼`：使用 LangGraph 和多個工具進行深度基本面分析，包含：
+     - 技術指標分析（RSI、MACD、VWAP、隨機指標）
+     - 財務健康度評估（P/E、P/B、負債權益比、利潤率等）
+     - 最新新聞與市場情緒分析
+     - 綜合投資建議（買入/持有/賣出）
 
 6. **投資大師集體分析**
-   - `/ai2 股票代碼`：提供多位知名投資大師（如巴菲特、芒格等）對該公司股票的集體分析意見。   
+   - `/ai2 股票代碼`：連接專業投資分析 API，提供多位知名投資大師的集體分析：
+     - 華倫·巴菲特（Warren Buffett）- 價值投資觀點
+     - 查理·蒙格（Charlie Munger）- 理性分析視角
+     - 凱西·伍德（Cathie Wood）- 創新成長觀點
+     - 彼得·林區（Peter Lynch）- 成長股策略
+     - 麥可·貝瑞（Michael Burry）- 風險分析視角
+     - 以及基本面、技術面、估值、情緒等專業分析師觀點
+     - 最終給出綜合決策建議（買入/賣出/持有/做空）及信心度評分
 
 7. **LLM 智能回答**
-   - `/llm 問題`：使用 LLM 回答與股票相關的任何問題，如：`/llm AVGO 的股價前景如何？`
+   - `/llm 問題`：連接 DIFY LLM API，使用先進的語言模型回答股票相關問題：
+     - 支援串流式回應，即時顯示 AI 分析結果
+     - 可詢問任何股票相關問題，如：`/llm AVGO 的股價前景如何？`
+     - 適合配合 `/ai` 或 `/ai2` 指令使用，進行深度問答
 
 8. **其他工具連結**
    - `/h`：顯示其他股票預測工具的連結。
@@ -75,7 +89,10 @@ docker pull tbdavid2019/telegram-bot-stock2:latest
 docker run -d --name telegram-bot-stock2 \
   -e TELEGRAM_BOT_TOKEN=<你的 Telegram Bot Token> \
   -e OPENAI_API_KEY=<你的 OpenAI API Key> \
-  -e LLM_API_KEY=<你的 LLM API Key> \
+  -e OPENAI_MODEL=gpt-4o \
+  -e OPENAI_BASE_URL=<選填: 自訂 API 端點> \
+  -e DIFY_API_KEY=<你的 DIFY API Key> \
+  -e DIFY_BASE_URL=<選填: 預設為 http://llm.glsoft.ai/v1/chat-messages> \
   tbdavid2019/telegram-bot-stock2:latest
 ```
 
@@ -98,7 +115,10 @@ pip install -r requirements.txt
 ```
 TELEGRAM_BOT_TOKEN=你的 Telegram Bot Token
 OPENAI_API_KEY=你的 OpenAI API Key
-LLM_API_KEY=你的 LLM API Key
+OPENAI_MODEL=gpt-4o  # 選填，預設為 gpt-4o，可改為其他模型如 gpt-3.5-turbo
+OPENAI_BASE_URL=     # 選填，若使用代理服務請填入，例如: https://your-proxy.com/v1
+DIFY_API_KEY=你的 DIFY API Key
+DIFY_BASE_URL=http://llm.glsoft.ai/v1/chat-messages  # 選填，預設為此網址
 ```
 
 3. 啟動機器人：
@@ -116,6 +136,7 @@ python main.py
 | `/ny` | 查詢台股新聞 | `/ny 2330.TW` |
 | `/p` | 預測未來 5 天股價區間 | `/p TSLA` |
 | `/ai` | 綜合基本面分析評估投資價值 | `/ai TSLA` |
+| `/ai2` | 多位投資大師集體分析 | `/ai2 NVDA` |
 | `/llm` | 使用 LLM 回答股票相關問題 | `/llm AVGO 的股價前景如何？` |
 | `/h` | 顯示其他股票工具連結 | `/h` |
 
@@ -148,13 +169,27 @@ It supports Taiwan Stock Exchange (TWSE) and U.S. Stocks.
    - `/p <stock_code>`: Predict the next 5 days' stock price range using the Prophet model.
 
 5. **AI Fundamental Analysis**
-   - `/ai <stock_code>`: Provide comprehensive fundamental analysis, evaluating whether the company's stock is worth investing in, including technical indicators, financial health analysis, and market sentiment analysis.
+   - `/ai <stock_code>`: Uses LangGraph and multiple tools for in-depth fundamental analysis, including:
+     - Technical indicator analysis (RSI, MACD, VWAP, Stochastic Oscillator)
+     - Financial health assessment (P/E, P/B, Debt-to-Equity, Profit Margins, etc.)
+     - Latest news and market sentiment analysis
+     - Comprehensive investment recommendations (Buy/Hold/Sell)
 
 6. **Investment Gurus Analysis**
-   - `/ai2 <stock_code>`: Provide collective analysis from multiple famous investors (such as Buffett, Munger, etc.) on the company's stock.
+   - `/ai2 <stock_code>`: Connects to professional investment analysis API, providing collective analysis from multiple renowned investors:
+     - Warren Buffett - Value investing perspective
+     - Charlie Munger - Rational analysis viewpoint
+     - Cathie Wood - Innovation and growth perspective
+     - Peter Lynch - Growth stock strategy
+     - Michael Burry - Risk analysis perspective
+     - Plus fundamental, technical, valuation, and sentiment analyst viewpoints
+     - Final comprehensive decision (Buy/Sell/Hold/Short) with confidence score
 
 7. **LLM Smart Responses**
-   - `/llm <question>`: Use LLM to answer any stock-related questions, e.g., `/llm What's the outlook for AVGO?`
+   - `/llm <question>`: Connects to DIFY LLM API, uses advanced language models to answer stock-related questions:
+     - Supports streaming responses for real-time AI analysis
+     - Can answer any stock-related questions, e.g., `/llm What's the outlook for AVGO?`
+     - Best used in combination with `/ai` or `/ai2` commands for in-depth Q&A
 
 8. **Other Tools**
    - `/h`: Display links to other stock prediction tools.
@@ -195,7 +230,10 @@ Run the container with your API keys:
 docker run -d --name telegram-bot-stock2 \
   -e TELEGRAM_BOT_TOKEN=<your_telegram_bot_token> \
   -e OPENAI_API_KEY=<your_openai_api_key> \
-  -e LLM_API_KEY=<your_llm_api_key> \
+  -e OPENAI_MODEL=gpt-4o \
+  -e OPENAI_BASE_URL=<optional_custom_api_endpoint> \
+  -e DIFY_API_KEY=<your_dify_api_key> \
+  -e DIFY_BASE_URL=<optional_defaults_to_http://llm.glsoft.ai/v1/chat-messages> \
   tbdavid2019/telegram-bot-stock2:latest
 ```
 
@@ -218,7 +256,10 @@ Create a .env file and add your API keys:
 ```
 TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 OPENAI_API_KEY=your-openai-api-key
-LLM_API_KEY=your-llm-api-key
+OPENAI_MODEL=gpt-4o  # Optional, defaults to gpt-4o, can change to other models like gpt-3.5-turbo
+OPENAI_BASE_URL=     # Optional, fill in if using a proxy service, e.g., https://your-proxy.com/v1
+DIFY_API_KEY=your-dify-api-key
+DIFY_BASE_URL=http://llm.glsoft.ai/v1/chat-messages  # Optional, defaults to this URL
 ```
 
 3. Start the bot:
@@ -236,6 +277,7 @@ python main.py
 | `/ny` | Fetch Taiwan stock news | `/ny 2330.TW` |
 | `/p` | Predict stock prices for 5 days | `/p TSLA` |
 | `/ai` | Comprehensive fundamental analysis | `/ai TSLA` |
+| `/ai2` | Investment gurus collective analysis | `/ai2 NVDA` |
 | `/llm` | Use LLM to answer stock-related questions | `/llm What's the outlook for AVGO?` |
 | `/h` | Show links to other tools | `/h` |
 
