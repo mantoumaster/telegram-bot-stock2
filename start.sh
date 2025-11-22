@@ -3,7 +3,7 @@ source myenv/bin/activate
 nohup python main.py > /tmp/stockapp.log 2>&1 &
 
 
-
+sudo docker image prune -f
 docker build -t telegram-bot-stock2 .
 
 docker run -d \

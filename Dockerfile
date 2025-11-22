@@ -1,8 +1,12 @@
-# 使用 Alpine 基底映像檔 (更輕量，兼容性更好)
-FROM python:3.11-alpine
+# 使用 Debian slim 基底映像檔 (更好的套件兼容性)
+FROM python:3.13-slim
 
-# 安裝編譯依賴
-RUN apk add --no-cache gcc musl-dev libffi-dev
+# 安裝系統依賴 (prophet 需要的編譯工具)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    make \
+    && rm -rf /var/lib/apt/lists/*
 
 # 設定工作目錄
 WORKDIR /app
