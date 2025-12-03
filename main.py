@@ -568,15 +568,15 @@ def fundamental_analyst(state: State):
     try:
         # 3.1 股價和技術指標
         print(f"=== [Debug] Getting stock prices for {stock}")
-        price_data = get_stock_prices(stock)
+        price_data = get_stock_prices.invoke({"ticker": stock})
         
         # 3.2 財務指標
         print(f"=== [Debug] Getting financial metrics for {stock}")
-        metrics = get_financial_metrics(stock)
+        metrics = get_financial_metrics.invoke({"ticker": stock})
         
         # 3.3 新聞
         print(f"=== [Debug] Getting financial news for {stock}")
-        news = get_financial_news(stock)
+        news = get_financial_news.invoke({"ticker": stock})
         
         # 3.4 整合資料，讓 LLM 生成最終分析
         analysis_prompt = f"""
